@@ -3,7 +3,7 @@ import userModel from "../models/userModel.js";
 import Stripe from "stripe";
 import dotenv from 'dotenv';
 dotenv.config()
-console.log('stripe key :', process.env.STRIPE_SECRET_KEY)
+// console.log('stripe key :',process.env.STRIPE_SECRET_KEY)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const placeOrder = async (req, res) => {
