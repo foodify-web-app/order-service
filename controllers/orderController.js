@@ -7,14 +7,13 @@ dotenv.config()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const placeOrder = async (req, res) => {
-  const frontend_url = "http://localhost:3000"; // Change this to your frontend URL
+  const frontend_url = "https://foodify-umber.vercel.app"; // Change this to your frontend URL
   try {
     const newOrder = new orderModel({
       userId: req.body.userId,
       items: req.body.items,
       amount: req.body.amount,
       address: req.body.address,
-      restaurantId: req.body.restaurantId
     });
     await newOrder.save();
     await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });

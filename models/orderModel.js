@@ -9,7 +9,6 @@ const orderSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now() },
   payment: { type: Boolean, default: false },
   cancelled: { type: Boolean, default: false },
-  restaurantId: { type: String, required: true },
 });
 
 const orderModel =
