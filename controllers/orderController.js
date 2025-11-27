@@ -1,23 +1,30 @@
 import orderModel from "../models/orderModel.js";
-import userModel from "../models/userModel.js";
+// import userModel from "../models/userModel.js";
 import Stripe from "stripe";
 import dotenv from 'dotenv';
+import axios from "axios";
+import orderItemRepository from "../repositories/orderItemRepository.js";
+import orderRepository from "../repositories/orderRepository.js";
 dotenv.config()
 // console.log('stripe key :',process.env.STRIPE_SECRET_KEY)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const user_service_url = process.env.USER_SERVICE_URL;
 
 const placeOrder = async (req, res) => {
   const frontend_url = "http://localhost:3000"; // Change this to your frontend URL
   try {
-    const newOrder = new orderModel({
-      userId: req.body.userId,
-      items: req.body.items,
-      amount: req.body.amount,
-      address: req.body.address,
-      restaurantId: req.body.restaurantId
+    const { userId, items, amount, address } = req.body;
+    const newOrder = await orderRepository.create({ userId, amount, address });
+
+    items.forEach(item => {
+      item.orderId = newOrder._id;
     });
-    await newOrder.save();
-    await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
+    const createdItems = await orderItemRepository.createMany(items);
+    if (createdItems) {
+      const itemIds = createdItems.map(item => item._id);
+      await orderRepository.updateById(newOrder._id, { items: itemIds })
+      await axios.put(`${user_service_url}/update/${req.body.userId}`, { cartData: {} })
+    }
 
     // Create customer with name and address
     const customer = await stripe.customers.create({
@@ -65,7 +72,7 @@ const placeOrder = async (req, res) => {
     res.json({ success: true, session_url: session.url });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: "Error" });
+    res.json({ success: false, message: "Error while placing order" });
   }
 };
 
@@ -90,7 +97,7 @@ const verifyOrder = async (req, res) => {
 
 const userOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({ userId: req.params.id }).sort({ date: -1 });
+    const orders = await orderModel.find({ userId: req.params.id }).sort({ createdAt: -1 });
     res.json({ success: true, data: orders });
   } catch (error) {
     console.log(error);
@@ -114,7 +121,7 @@ const getOrderById = async (req, res) => {
 // list orders for admin panel
 const listAllOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({}).sort({date: -1});
+    const orders = await orderModel.find({}).sort({ date: -1 });
     res.json({ success: true, data: orders });
   } catch (error) {
     console.log(error);

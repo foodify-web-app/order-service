@@ -2,14 +2,15 @@ import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema({
   userId: { type: String, required: true },
-  items: { type: Array, required: true },
+  items: { type: Array, default: [] },
   amount: { type: Number, required: true },
   address: { type: Object, required: true },
   status: { type: String, default: "In Process" },
   date: { type: Date, default: Date.now() },
   payment: { type: Boolean, default: false },
   cancelled: { type: Boolean, default: false },
-  restaurantId: { type: String, required: true },
+},{
+  timestamps: true
 });
 
 const orderModel =
