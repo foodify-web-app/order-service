@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const orderItemSchema = new mongoose.Schema(
   {
     orderId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "order",
       required: true
     },
     name: {
@@ -21,7 +22,8 @@ const orderItemSchema = new mongoose.Schema(
     restaurantId: {
       type: String,
       required: true
-    }
+    },
+    status: { type: String, default: "In Process" }
   },
   {
     timestamps: true

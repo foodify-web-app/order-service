@@ -1,4 +1,5 @@
 import orderModel from "../models/orderModel.js";
+import orderItemRepository from "./orderItemRepository.js";
 
 class OrderRepository {
     // Create a new order
@@ -30,7 +31,8 @@ class OrderRepository {
                 .find({ userId })
                 .sort(sort)
                 .skip(skip)
-                .limit(limit);
+                .limit(limit)
+                .populate("items");
 
             const total = await orderModel.countDocuments({ userId });
 
@@ -155,6 +157,7 @@ class OrderRepository {
     // Delete order by ID
     async deleteById(id) {
         try {
+            await orderItemRepository.deleteByOrderId(id);
             return await orderModel.findByIdAndDelete(id);
         } catch (error) {
             throw new Error(`Error deleting order: ${error.message}`);

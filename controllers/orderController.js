@@ -1,12 +1,9 @@
-import orderModel from "../models/orderModel.js";
-// import userModel from "../models/userModel.js";
 import Stripe from "stripe";
 import dotenv from 'dotenv';
 import axios from "axios";
 import orderItemRepository from "../repositories/orderItemRepository.js";
 import orderRepository from "../repositories/orderRepository.js";
 dotenv.config()
-// console.log('stripe key :',process.env.STRIPE_SECRET_KEY)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const user_service_url = process.env.USER_SERVICE_URL;
 
@@ -23,7 +20,11 @@ const placeOrder = async (req, res) => {
     if (createdItems) {
       const itemIds = createdItems.map(item => item._id);
       await orderRepository.updateById(newOrder._id, { items: itemIds })
-      await axios.put(`${user_service_url}/update/${req.body.userId}`, { cartData: {} })
+      await axios.put(`${user_service_url}/update/${req.body.userId}`, { cartData: {} }, {
+        headers: {
+          token: req.headers.token
+        }
+      })
     }
 
     // Create customer with name and address
@@ -76,82 +77,78 @@ const placeOrder = async (req, res) => {
   }
 };
 
-
 const verifyOrder = async (req, res) => {
   const { orderId, success } = req.body;
   try {
     if (success == "true") {
-      await orderModel.findByIdAndUpdate(orderId, { payment: true });
+      await orderRepository.updateById(orderId, { payment: true });
       res.json({ success: true, message: "Paid" });
     } else {
-      await orderModel.findByIdAndDelete(orderId);
+      await orderRepository.deleteById(orderId);
       res.json({ success: false, message: "Not Paid" });
     }
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Error" });
+    res.json({ success: false, message: `Error verifying order: ${error.message} ` });
   }
 };
 
 // user order for frontend
-
 const userOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({ userId: req.params.id }).sort({ createdAt: -1 });
+    const orders = await orderRepository.findByUserId(req.params.id);
     res.json({ success: true, data: orders });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Error" });
+    res.json({ success: false, message: `Error getting user orders: ${error.message}` });
   }
 };
 
 const getOrderById = async (req, res) => {
   try {
-    const order = await orderModel.findById(req.params.id);
+    const order = await orderRepository.findById(req.params.id);
     if (order == null) {
       return res.json({ success: false, message: "order not found" });
     }
     res.json({ success: true, data: order });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Error" });
+    res.json({ success: false, message: `Error getting order: ${error.message}` });
   }
 };
 
 // list orders for admin panel
 const listAllOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({}).sort({ date: -1 });
+    const orders = await orderRepository.findAll();
     res.json({ success: true, data: orders });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Error" });
+    res.json({ success: false, message: `Error listing all orders: ${error.message}` });
   }
 };
 
 // api for updating order status
-
 const updateStatus = async (req, res) => {
   try {
-    await orderModel.findByIdAndUpdate(req.body.orderId, {
-      status: req.body.status,
-    });
+    await orderRepository.updateStatus(req.body.orderId, req.body.status);
     res.json({ success: true, message: "Status Updated" });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Error" });
+    res.json({ success: false, message: `Error updating status: ${error.message}` });
   }
 };
 
 const cancelOrder = async (req, res) => {
   try {
-    await orderModel.findByIdAndUpdate(req.params.id, {
-      cancelled: true,
-    });
+    await orderRepository.updateStatus(req.params.id, { cancelled: true });
     res.json({ success: true, message: "order cancelled" });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Error" });
+    res.json({ success: false, message: `Error cancelling order: ${error.message}` });
+  }
+};
+
+const getOrderByRestaurantId = async (req, res) => {
+  try {
+    const orders = await orderItemRepository.findByRestaurantId(req.params.id);
+    res.json({ success: true, data: orders });
+  } catch (error) {
+    res.json({ success: false, message: `Error getting restaurant orders: ${error.message}` });
   }
 };
 
@@ -163,4 +160,5 @@ export {
   updateStatus,
   getOrderById,
   cancelOrder,
+  getOrderByRestaurantId
 };

@@ -1,6 +1,6 @@
 import express from "express";
-import { authMiddleware } from "common-utils";
-import { cancelOrder, getOrderById, listAllOrders, placeOrder, updateStatus, userOrders, verifyOrder } from "../controllers/orderController.js";
+import { adminMiddleware, authMiddleware } from "../middleware/auth.middleware.js";
+import { cancelOrder, getOrderById, getOrderByRestaurantId, listAllOrders, placeOrder, updateStatus, userOrders, verifyOrder } from "../controllers/orderController.js";
 
 const orderRouter = express.Router();
 orderRouter.post("/place", authMiddleware, placeOrder);
@@ -10,5 +10,6 @@ orderRouter.get('/list', listAllOrders);
 orderRouter.post("/status", updateStatus);
 orderRouter.post("/cancel/:id", cancelOrder);
 orderRouter.get("/:id", authMiddleware, getOrderById);
+orderRouter.get("/admin/restaurant/:id", getOrderByRestaurantId);
 
 export default orderRouter; 

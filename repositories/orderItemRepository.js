@@ -41,7 +41,7 @@ class OrderItemRepository {
     // Find all order items for a specific restaurant
     async findByRestaurantId(restaurantId) {
         try {
-            return await orderItemModel.find({ restaurantId }).sort({ createdAt: -1 });
+            return await orderItemModel.find({ restaurantId }).sort({ createdAt: -1 }).populate('orderId');
         } catch (error) {
             throw new Error(`Error finding order items by restaurant ID: ${error.message}`);
         }
